@@ -9,7 +9,7 @@ export function WorkspaceHeader() {
     <header className="border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-8">
         <Link className="flex items-center gap-3" href="/">
-          <span className="flex size-10 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm shadow-violet-200">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-200">
             <FileText className="size-5" />
           </span>
           <span>

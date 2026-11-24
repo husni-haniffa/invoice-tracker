@@ -18,11 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createInvoice } from "@/lib/invoice-api"
+import { createInvoice, updateInvoiceDetails } from "@/lib/invoice-api"
 import {
   formatCurrency,
   getLocalDate,
   roundMoney,
+  type Invoice,
   type PaymentMethod,
 } from "@/lib/invoices"
 
@@ -44,13 +45,37 @@ const initialValues: FormValues = {
   items: [{ itemName: "", quantity: "1", unitPrice: "" }],
 }
 
-export function CreateInvoiceForm() {
+export function CreateInvoiceForm({
+  invoice,
+  inDialog = false,
+  onCancel,
+  onSaved,
+}: {
+  invoice?: Invoice
+  inDialog?: boolean
+  onCancel?: () => void
+  onSaved?: () => void
+}) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [submitError, setSubmitError] = useState("")
   const createMutation = useMutation({ mutationFn: createInvoice })
+  const updateMutation = useMutation({ mutationFn: updateInvoiceDetails })
   const form = useForm({
-    defaultValues: initialValues,
+    defaultValues: invoice
+      ? {
+          customerName: invoice.customer_name ?? "",
+          customerPhone: invoice.customer_phone ?? "",
+          invoiceDate: invoice.invoice_date,
+          paidAmount: invoice.paid_amount.toFixed(2),
+          paymentMethod: invoice.payment_method ?? ("cash" as PaymentMethod),
+          items: invoice.invoice_items.map((item) => ({
+            itemName: item.item_name,
+            quantity: String(item.quantity),
+            unitPrice: item.unit_price.toFixed(2),
+          })),
+        }
+      : initialValues,
     onSubmit: async ({ value }) => {
       setSubmitError("")
 
@@ -88,7 +113,9 @@ export function CreateInvoiceForm() {
           0,
         ),
       )
-      const paidAmount = Number(value.paidAmount)
+      const paidAmount = invoice
+        ? invoice.paid_amount
+        : Number(value.paidAmount)
       if (subtotal <= 0) {
         setSubmitError("The invoice total must be greater than zero.")
         return
@@ -99,7 +126,11 @@ export function CreateInvoiceForm() {
         roundMoney(paidAmount) !== paidAmount ||
         paidAmount > subtotal
       ) {
-        setSubmitError("Enter an advance between zero and the invoice total.")
+        setSubmitError(
+          invoice
+            ? "The updated total cannot be less than the amount already paid."
+            : "Enter an advance between zero and the invoice total.",
+        )
         return
       }
       if (!value.invoiceDate) {
@@ -108,16 +139,28 @@ export function CreateInvoiceForm() {
       }
 
       try {
-        const result = await createMutation.mutateAsync({
-          customerName,
-          customerPhone,
-          invoiceDate: value.invoiceDate,
-          paidAmount,
-          paymentMethod: paidAmount > 0 ? value.paymentMethod : null,
-          items,
-        })
+        const result = invoice
+          ? await updateMutation.mutateAsync({
+              id: invoice.id,
+              customerName,
+              customerPhone,
+              invoiceDate: value.invoiceDate,
+              items,
+            })
+          : await createMutation.mutateAsync({
+              customerName,
+              customerPhone,
+              invoiceDate: value.invoiceDate,
+              paidAmount,
+              paymentMethod: paidAmount > 0 ? value.paymentMethod : null,
+              items,
+            })
         await queryClient.invalidateQueries({ queryKey: ["invoices"] })
-        router.push(`/invoices/${result.id}`)
+        if (onSaved) {
+          onSaved()
+        } else {
+          router.push(`/invoices/${invoice?.id ?? result.id}`)
+        }
       } catch (error) {
         setSubmitError(
           error instanceof Error ? error.message : "Could not save this invoice.",
@@ -127,36 +170,38 @@ export function CreateInvoiceForm() {
   })
 
   useEffect(() => {
-    form.setFieldValue("invoiceDate", getLocalDate())
-  }, [form])
+    if (!invoice) form.setFieldValue("invoiceDate", getLocalDate())
+  }, [form, invoice])
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] text-slate-900">
-      <WorkspaceHeader />
-      <main className="mx-auto max-w-7xl px-4 py-7 sm:px-8 sm:py-10">
-        <div className="mx-auto max-w-5xl">
-          <Link
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-violet-700"
+    <div className={inDialog ? "text-slate-900" : "min-h-screen bg-slate-50 text-slate-900"}>
+      {!inDialog ? <WorkspaceHeader /> : null}
+      <main className={inDialog ? "" : "mx-auto max-w-7xl px-4 py-7 sm:px-8 sm:py-10"}>
+        <div className={inDialog ? "" : "mx-auto max-w-5xl"}>
+          {!inDialog ? <Link
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-blue-700"
             href="/"
           >
             <ArrowLeft className="size-4" />
-            Back to invoices
-          </Link>
+            Back to {invoice ? "invoice" : "invoices"}
+          </Link> : null}
 
-          <div className="mb-7 mt-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-700">
-              New invoice
+          {!inDialog ? <div className="mb-7 mt-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
+              {invoice ? "Edit invoice" : "New invoice"}
             </p>
             <h1 className="mt-2 text-4xl font-semibold tracking-[-0.045em] text-slate-950">
-              Create an invoice
+              {invoice ? "Edit invoice details" : "Create an invoice"}
             </h1>
             <p className="mt-2 text-[0.95rem] text-slate-500">
-              Add customer details and items, then record any advance payment.
+              {invoice
+                ? "Update the customer, date, or items on this invoice."
+                : "Add customer details and items, then record any advance payment."}
             </p>
-          </div>
+          </div> : null}
 
           <form
-          className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+          className={`grid gap-6 ${inDialog ? "lg:grid-cols-[minmax(0,1fr)_280px]" : "lg:grid-cols-[minmax(0,1fr)_320px]"}`}
           noValidate
           onSubmit={(event) => {
             event.preventDefault()
@@ -364,6 +409,7 @@ export function CreateInvoiceForm() {
               </CardContent>
             </Card>
 
+            {!invoice ? (
             <Card className="border-0 shadow-sm ring-1 ring-slate-200/80">
               <CardHeader>
                 <CardTitle>Advance payment</CardTitle>
@@ -420,10 +466,11 @@ export function CreateInvoiceForm() {
                 </form.Field>
               </CardContent>
             </Card>
+            ) : null}
           </div>
 
           <aside className="space-y-4">
-            <Card className="border-0 shadow-sm ring-1 ring-slate-200/80 lg:sticky lg:top-8">
+            <Card className={`border-0 shadow-sm ring-1 ring-slate-200/80 ${inDialog ? "" : "lg:sticky lg:top-8"}`}>
               <CardHeader>
                 <CardTitle>Invoice summary</CardTitle>
               </CardHeader>
@@ -454,7 +501,7 @@ export function CreateInvoiceForm() {
                           <span>{formatCurrency(subtotal)}</span>
                         </div>
                         <div className="flex justify-between text-sm text-slate-500">
-                          <span>Advance received</span>
+                          <span>{invoice ? "Paid so far" : "Advance received"}</span>
                           <span>{formatCurrency(paidAmount)}</span>
                         </div>
                         <div className="border-t border-slate-100 pt-4">
@@ -466,8 +513,9 @@ export function CreateInvoiceForm() {
                           </div>
                         </div>
                         <p className="text-xs leading-5 text-slate-500">
-                          The invoice starts as pending, partial, or paid based
-                          on the advance amount.
+                        {invoice
+                          ? "The existing payment is retained when you edit this invoice."
+                          : "The invoice starts as pending, partial, or paid based on the advance amount."}
                         </p>
                       </div>
                     )
@@ -484,16 +532,24 @@ export function CreateInvoiceForm() {
                 ) : null}
 
                 <Button
-                  className="mt-6 h-10 w-full gap-2 bg-violet-600 text-white hover:bg-violet-700"
-                  disabled={createMutation.isLoading}
+                  className="mt-6 h-10 w-full gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                  disabled={createMutation.isLoading || updateMutation.isLoading}
                   type="submit"
                 >
                   <FilePlus2 className="size-4" />
-                  {createMutation.isLoading ? "Saving invoice..." : "Create invoice"}
+                  {createMutation.isLoading || updateMutation.isLoading
+                    ? "Saving invoice..."
+                    : invoice
+                      ? "Save changes"
+                      : "Create invoice"}
                 </Button>
                 <Button
                   className="mt-2 w-full"
-                  onClick={() => router.push("/")}
+                  onClick={() =>
+                    onCancel
+                      ? onCancel()
+                      : router.push(invoice ? `/invoices/${invoice.id}` : "/")
+                  }
                   type="button"
                   variant="ghost"
                 >

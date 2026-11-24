@@ -7,6 +7,7 @@ Invoice Tracker is a Clerk-authenticated invoice tracker built with Next.js, Tan
 - Create invoices with a customer name or phone number, a selectable invoice date, and one or more items.
 - Track the invoice subtotal, total paid, and remaining balance in LKR.
 - Manage payment as pending, partial, or paid, with cash or bank transfer recorded as the method.
+- Edit customer details, dates, and items on pending or partial invoices.
 - Search customers by name or phone number; dashboard totals reflect the matching invoices.
 - Keep each user's invoices isolated with Supabase Row Level Security and their Clerk identity.
 
@@ -27,7 +28,7 @@ Invoice Tracker is a Clerk-authenticated invoice tracker built with Next.js, Tan
    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
    ```
 
-4. Apply `supabase/migrations/20261123000000_create_invoices.sql` once from this workspace:
+4. Apply all pending Supabase migrations from this workspace before using the app:
 
    ```powershell
    pnpm add -D supabase
@@ -37,7 +38,7 @@ Invoice Tracker is a Clerk-authenticated invoice tracker built with Next.js, Tan
    pnpm exec supabase db push
    ```
 
-   Find `<your-project-ref>` in the Supabase Dashboard URL (`https://supabase.com/dashboard/project/<project-ref>`). The link command prompts for your database password. `db push` shows the pending migration before applying it. If you prefer, paste the migration file into the project's Supabase **SQL Editor** and run it once instead.
+   Find `<your-project-ref>` in the Supabase Dashboard URL (`https://supabase.com/dashboard/project/<project-ref>`). The link command prompts for your database password.    `db push` applies all pending migrations, including the latest invoice editing migration. If you prefer the SQL Editor, apply each migration file in timestamp order.
 5. Install dependencies and start the app:
 
    ```bash

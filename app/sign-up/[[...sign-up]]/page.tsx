@@ -4,7 +4,7 @@ import { authAppearance, AuthShell } from "@/components/auth-shell";
 
 export default function SignUpPage() {
   return (
-    <AuthShell mode="sign-up">
+    <AuthShell>
       <Suspense
         fallback={
           <div

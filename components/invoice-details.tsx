@@ -128,7 +128,7 @@ function InvoiceRecord({ invoice }: { invoice: Invoice }) {
     ) : null
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <WorkspaceHeader />
       <main className="mx-auto max-w-7xl px-4 py-7 sm:px-8 sm:py-10">
         <div className="mx-auto max-w-5xl">
@@ -161,7 +161,6 @@ function InvoiceRecord({ invoice }: { invoice: Invoice }) {
             {invoice.status}
           </Badge>
         </div>
-
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-6">
             <Card className="border-0 shadow-sm ring-1 ring-slate-200/80">

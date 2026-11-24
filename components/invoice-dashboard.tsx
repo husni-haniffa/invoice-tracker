@@ -11,17 +11,17 @@ import {
   FilePlus2,
   FileText,
   LayoutDashboard,
+  Pencil,
   Search,
-  Wallet,
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { InvoiceFormDialog } from "@/components/invoice-form-dialog"
 import { fetchInvoices } from "@/lib/invoice-api"
 import {
   formatCurrency,
@@ -73,12 +73,12 @@ function MetricCard({
   amount: string
   note: string
   icon: ReactNode
-  accent: "violet" | "green" | "amber"
+  accent: "blue" | "green" | "amber"
 }) {
   const accentStyles = {
-    violet: {
-      icon: "bg-violet-50 text-violet-700",
-      border: "border-l-violet-500",
+    blue: {
+      icon: "bg-blue-50 text-blue-700",
+      border: "border-l-blue-500",
     },
     green: {
       icon: "bg-emerald-50 text-emerald-700",
@@ -123,9 +123,9 @@ function LoadingRows() {
 }
 
 export function InvoiceDashboard() {
-  const router = useRouter()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | InvoiceStatus>("all")
+  const [dialogInvoice, setDialogInvoice] = useState<Invoice | null | "new">(null)
   const { data: invoices = [], error, isLoading } = useQuery({
     queryKey: ["invoices"],
     queryFn: fetchInvoices,
@@ -163,11 +163,11 @@ export function InvoiceDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] text-slate-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-[260px] shrink-0 bg-[#191a2d] px-5 py-7 text-white lg:flex lg:flex-col">
+        <aside className="hidden w-[240px] shrink-0 bg-slate-800 px-5 py-7 text-white lg:flex lg:flex-col">
           <Link className="flex items-center gap-3 px-2" href="/">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-violet-500 text-white shadow-lg shadow-violet-950/30">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-blue-600 text-white">
               <FileText className="size-5" />
             </span>
             <span>
@@ -184,7 +184,7 @@ export function InvoiceDashboard() {
               className="flex items-center gap-3 rounded-xl bg-white/[0.09] px-3 py-3 text-sm font-medium text-white ring-1 ring-white/[0.06]"
               href="/"
             >
-              <LayoutDashboard className="size-4 text-violet-300" />
+              <LayoutDashboard className="size-4 text-sky-300" />
               Overview
             </Link>
             <Link
@@ -192,18 +192,8 @@ export function InvoiceDashboard() {
               href="/#invoices"
             >
               <FileText className="size-4" />
-              Invoices
+              Invoice list
             </Link>
-          </div>
-
-          <div className="mt-auto rounded-2xl border border-white/[0.08] bg-white/[0.05] p-4 text-white">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-violet-400/10 text-violet-300">
-              <Wallet className="size-4" />
-            </div>
-            <p className="mt-4 text-sm font-medium">A clearer cash flow</p>
-            <p className="mt-1 text-xs leading-5 text-slate-400">
-              See what has been paid and what is still outstanding at a glance.
-            </p>
           </div>
         </aside>
 
@@ -211,7 +201,7 @@ export function InvoiceDashboard() {
           <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/85 px-4 py-3.5 backdrop-blur-xl sm:px-8">
             <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
               <Link className="flex items-center gap-2 lg:hidden" href="/">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-violet-600 text-white">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-blue-600 text-white">
                   <FileText className="size-4" />
                 </span>
                 <span className="font-semibold">Invoice Tracker</span>
@@ -228,8 +218,8 @@ export function InvoiceDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <Button
-                  className="h-10 gap-2 rounded-xl bg-violet-600 px-4 text-white shadow-sm shadow-violet-200 transition hover:-translate-y-0.5 hover:bg-violet-700 hover:shadow-md"
-                  onClick={() => router.push("/invoices/new")}
+                  className="h-10 gap-2 rounded-xl bg-blue-600 px-4 text-white shadow-sm transition hover:bg-blue-700"
+                  onClick={() => setDialogInvoice("new")}
                 >
                   <FilePlus2 className="size-4" />
                   <span className="hidden sm:inline">Create invoice</span>
@@ -253,7 +243,7 @@ export function InvoiceDashboard() {
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-10">
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-700">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">
                   Your business at a glance
                 </p>
                 <h1 className="mt-2 text-4xl font-semibold tracking-[-0.045em] text-slate-950">
@@ -286,7 +276,7 @@ export function InvoiceDashboard() {
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <MetricCard
-                accent="violet"
+                accent="blue"
                 amount={formatCurrency(totalBilled)}
                 icon={<FileText className="size-5" />}
                 label="Total invoiced"
@@ -356,10 +346,10 @@ export function InvoiceDashboard() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {visibleInvoices.map((invoice) => (
-                        <tr className="transition-colors hover:bg-violet-50/35" key={invoice.id}>
+                        <tr className="transition-colors hover:bg-blue-50/60" key={invoice.id}>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-semibold text-violet-700">
+                              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700">
                                 {getCustomerInitials(invoice)}
                               </span>
                               <span className="min-w-0">
@@ -393,13 +383,27 @@ export function InvoiceDashboard() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {invoice.status !== "paid" ? (
+                                <Button
+                                  aria-label={`Edit invoice for ${getCustomerName(invoice)}`}
+                                  className="size-8 text-slate-400 hover:bg-blue-50 hover:text-blue-700"
+                                  onClick={() => setDialogInvoice(invoice)}
+                                  size="icon"
+                                  title="Edit invoice"
+                                  variant="ghost"
+                                >
+                                  <Pencil className="size-4" />
+                                </Button>
+                              ) : null}
                             <Link
                               aria-label={`Manage invoice for ${getCustomerName(invoice)}`}
-                              className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-violet-50 hover:text-violet-700"
+                              className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-blue-50 hover:text-blue-700"
                               href={`/invoices/${invoice.id}`}
                             >
                               <ChevronRight className="size-4" />
                             </Link>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -408,7 +412,7 @@ export function InvoiceDashboard() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center px-6 py-16 text-center">
-                  <span className="flex size-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                  <span className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
                     {search ? <Search className="size-5" /> : <Banknote className="size-5" />}
                   </span>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">
@@ -421,8 +425,8 @@ export function InvoiceDashboard() {
                   </p>
                   {!search ? (
                     <Button
-                      className="mt-5 gap-2 bg-violet-600 text-white hover:bg-violet-700"
-                      onClick={() => router.push("/invoices/new")}
+                      className="mt-5 gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                      onClick={() => setDialogInvoice("new")}
                     >
                       <FilePlus2 className="size-4" />
                       Create invoice
@@ -434,6 +438,13 @@ export function InvoiceDashboard() {
           </div>
         </main>
       </div>
+      <InvoiceFormDialog
+        invoice={dialogInvoice && dialogInvoice !== "new" ? dialogInvoice : undefined}
+        onOpenChange={(open) => {
+          if (!open) setDialogInvoice(null)
+        }}
+        open={dialogInvoice !== null}
+      />
     </div>
   )
 }

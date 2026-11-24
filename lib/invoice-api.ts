@@ -60,3 +60,25 @@ export async function updateInvoicePayment(input: {
     payment_method: PaymentMethod | null
   }>
 }
+
+export async function updateInvoiceDetails(input: {
+  id: string
+  customerName: string
+  customerPhone: string
+  invoiceDate: string
+  items: { itemName: string; quantity: number; unitPrice: number }[]
+}) {
+  const response = await fetch(`/api/invoices/${input.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      invoiceDate: input.invoiceDate,
+      items: input.items,
+    }),
+  })
+
+  if (!response.ok) throw new Error(await getErrorMessage(response))
+  return response.json() as Promise<{ id: string }>
+}
