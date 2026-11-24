@@ -1,17 +1,17 @@
-import { createClient } from '@/utils/supabase/server'
-import { cookies } from 'next/headers'
+import { Suspense } from "react"
+import { InvoiceDashboard } from "@/components/invoice-dashboard"
+import { PageLoading } from "@/components/page-loading"
+import { requireSignedInUser } from "@/lib/auth"
 
-export default async function Page() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-
-  const { data: todos } = await supabase.from('todos').select()
-
+export default function Page() {
   return (
-    <ul>
-      {todos?.map((todo) => (
-        <li key={todo.id}>{todo.name}</li>
-      ))}
-    </ul>
+    <Suspense fallback={<PageLoading />}>
+      <AuthenticatedDashboard />
+    </Suspense>
   )
+}
+
+async function AuthenticatedDashboard() {
+  await requireSignedInUser()
+  return <InvoiceDashboard />
 }
